@@ -44,8 +44,6 @@ Recent activity
 [Ctrl+C to stop]
 ```
 
-![Demo](assets/demo.gif)
-
 ---
 
 ## Mục đích & Tính năng cốt lõi
