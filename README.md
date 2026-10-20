@@ -2,21 +2,21 @@
 
 # Xool — Roblox Classic Clothes Uploader
 
-**Tự động hóa quét catalog, tối ưu texture bằng AI, lọc NSFW và xuất bản Classic Shirts & Pants lên Roblox Group — kèm Terminal Console UI thời gian thực.**
+**Automated catalog scraping, AI-driven texture enhancement, neural NSFW filtering, and bulk publishing for Roblox Classic Shirts & Pants — featuring a real-time ANSI terminal UI.**
 
 ![Version](https://img.shields.io/badge/version-1.0-00bcd4?style=for-the-badge)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-[Tính năng](#mục-đích--tính-năng-cốt-lõi) · [Giao diện](#giao-diện-terminal-preview) · [Cài đặt](#cài-đặt--hướng-dẫn-sử-dụng-quick-start) · [Cấu trúc](#cấu-trúc-thư-mục--workflow) · [FAQ](#xử-lý-lỗi-thường-gặp-troubleshooting--faq) · [Hỗ trợ](#kết-nối--hỗ-trợ-connect--support)
+[Features](#core-features) · [Terminal UI](#terminal-preview) · [Quick Start](#installation--quick-start) · [Architecture & Workflow](#architecture--workflow) · [FAQ](#troubleshooting--faq) · [Support](#connect--support)
 
 </div>
 
 ---
 
-## Giao diện Terminal Preview
+## Terminal Preview
 
-Console UI thuần ANSI (không dùng thư viện TUI ngoài) chạy trên thread nền riêng, tự làm mới số liệu mà không chặn luồng upload:
+Real-time ANSI Console UI running on an independent background daemon thread (`console-ui`), refreshing live operational metrics without blocking concurrent network workers:
 
 ```text
 Clothes Uploader Roblox  v1.0
@@ -46,34 +46,34 @@ Recent activity
 
 ---
 
-## Mục đích & Tính năng cốt lõi
+## Core Features
 
-**Xool** là pipeline khép kín cho các Group kinh doanh Classic Clothing: tìm mẫu, dịch tên, kiểm tra an toàn, nâng cấp texture, upload và mở bán — tất cả trong một vòng lặp tự động.
+**Xool** is a closed-loop automated pipeline engineered for Roblox clothing groups: discovery, title translation, safety screening, texture enhancement, asset creation, and marketplace release — executed autonomously within a continuous loop.
 
-- **Đa luồng & bất đồng bộ**: UI vẽ trên daemon thread `console-ui` (`src/ui`) với `threading.Lock`/`RLock`; `LogStream` gom log theo dòng nên terminal không giật lag và luồng mạng không bị chặn.
-- **Quản lý token & phiên tự động** (`src/cookie`): xác thực `.ROBLOSECURITY`, tự làm mới `X-CSRF-TOKEN` khi gặp 403 CSRF, exponential backoff + tôn trọng `Retry-After` (tối đa 60s) khi bị HTTP 429.
-- **Tương thích proxy**: toàn bộ traffic đi qua `requests.Session`, tự đọc `HTTP_PROXY` / `HTTPS_PROXY` từ môi trường; SOCKS cần cài thêm `PySocks` (`pip install requests[socks]`).
-- **Quét catalog thông minh** (`src/scrape`): phân trang cursor, tối đa 150 item mỗi lượt quét, xáo trộn pool 40 ứng viên mỗi vòng và loại bỏ creator/từ khóa trong blacklist.
-- **Dịch tên & chuẩn hóa SEO** (`src/naming.py`): từ điển offline VI→EN (~90 cụm thời trang), bỏ dấu NFD, loại ký tự non-Latin — tên file và tên hiển thị Roblox luôn là tiếng Anh.
-- **Chống trùng lặp** (`src/files`): perceptual hash (`imagehash`) đối chiếu với kho ảnh, tránh tải/upload lại mẫu đã có.
-- **Lọc NSFW** (`src/download`): mạng nơ-ron TensorFlow + OpenNSFW2 chặn ảnh nhạy cảm vượt ngưỡng `max_nudity_value`.
-- **Enhance Hybrid** (`src/enhance`): Gemini Web Cookie (không tốn quota API), Gemini API xoay vòng key, Stable Diffusion Replicate, hoặc engine procedural cục bộ (căn đường may UV `uv_spec.py`, phủ bóng AO, độ sâu vải).
-- **Bảo vệ Robux** (`src/upload`): nhận diện phí cọc 80 Robux/item; nếu publish lỗi tạm thời, sản phẩm vào `src/assets/pending_sales.json` để thử lại định kỳ thay vì mất tiền.
-- **Chống treo vô hạn**: tự dừng an toàn sau 10 vòng liên tiếp không có tiến trình hoặc 10 vòng crash liên tiếp.
+- **Multi-Threaded & Asynchronous UI**: UI renders on a dedicated daemon thread `console-ui` (`src/ui`) with `threading.Lock`/`RLock`; `LogStream` captures line-buffered logs so terminal output remains smooth without blocking upload network threads.
+- **Automated Session & Token Management** (`src/cookie`): Authenticates `.ROBLOSECURITY`, automatically refreshes `X-CSRF-TOKEN` on HTTP 403 CSRF responses, and applies exponential backoff honoring `Retry-After` (capped at 60s) on HTTP 429 rate limits.
+- **Proxy Compatibility**: All network calls route through `requests.Session`, reading `HTTP_PROXY` / `HTTPS_PROXY` from the environment automatically; SOCKS proxies supported via `pip install "requests[socks]"`.
+- **Intelligent Catalog Scraping** (`src/scrape`): Cursor-based pagination scanning up to 150 items per search, shuffling a candidate pool of 40 items per round, filtering blacklisted creator IDs and banned keywords.
+- **Automated Title Translation & SEO Normalization** (`src/naming.py`): Offline VI→EN fashion dictionary (~90 phrase mappings), Unicode NFD diacritic stripping, and non-Latin character sanitization ensuring valid ASCII-only English product names.
+- **Perceptual Deduplication** (`src/files`): Perceptual hashing (`imagehash`) matches candidate textures against the local repository to prevent downloading or uploading duplicate assets.
+- **Neural NSFW Screening** (`src/download`): Convolutional neural network evaluation powered by TensorFlow and OpenNSFW2, discarding templates exceeding the configurable `max_nudity_value` threshold.
+- **Hybrid Texture Enhancement Engine** (`src/enhance`): Seamless integration with Gemini Web Cookies (zero official API quota consumption), Gemini API with automated multi-key rotation, Replicate Stable Diffusion (LoRA / ControlNet), or a local procedural UV seam and ambient occlusion (AO) shading pipeline.
+- **Robux Deposit Protection** (`src/upload`): Detects Roblox's 80 Robux creation deposit fee; if release fails temporarily after deposit, the item is queued into `src/assets/pending_sales.json` for automated periodic retry.
+- **Crash & Starvation Guards**: Automatically halts execution safely after 10 consecutive zero-progress rounds or 10 consecutive exception rounds.
 
 ---
 
-## Disclaimer & Cảnh báo bảo mật
+## Disclaimer & Security Warnings
 
 > [!WARNING]
-> **Rủi ro khóa tài khoản theo Roblox Terms of Service**
-> Công cụ tự động hóa tương tác trực tiếp với API Roblox. Việc sử dụng có thể vi phạm TOS và dẫn tới cảnh cáo, khóa tạm thời hoặc khóa vĩnh viễn tài khoản/Group. **Tác giả không chịu trách nhiệm cho bất kỳ thiệt hại nào** về tài khoản, Group hoặc số dư Robux. Nên chạy bằng tài khoản phụ có quyền hạn giới hạn.
+> **Roblox Terms of Service & Account Risk**
+> This automation tool directly interfaces with undocumented and internal Roblox APIs. Automated asset uploads may violate Roblox Community Guidelines or Terms of Service and could result in account warnings, temporary moderation bans, or permanent group termination. **The author accepts no liability for account penalties, loss of Robux, or group enforcement actions.** Running this software on dedicated, disposable bot accounts is strongly advised.
 
 > [!CAUTION]
-> **Tuyệt đối không chia sẻ token/cookie/password**
-> `.ROBLOSECURITY`, `gemini_cookie` và API key cho phép đăng nhập toàn quyền vào tài khoản. Không gửi `config.json` / `ai_settings.json` cho bất kỳ ai và không commit chúng lên GitHub.
+> **Credential Security & Token Hygiene**
+> Your `.ROBLOSECURITY` cookie, `gemini_cookie`, and third-party API keys provide unrestricted access to your respective accounts. Never share your `config.json` or `ai_settings.json` files, and never commit active credentials to public repositories.
 
-Kiểm tra `.gitignore` trước khi push để không lộ `config.json`, `.env`, `proxies.txt`:
+Example `.gitignore` snippet to protect sensitive configurations and runtime caches:
 
 ```gitignore
 config.json
@@ -91,24 +91,24 @@ venv/
 
 ---
 
-## Cài đặt & Hướng dẫn sử dụng (Quick Start)
+## Installation & Quick Start
 
-**Yêu cầu:** Windows 10/11, Linux hoặc macOS; **Python 3.10 / 3.11 (64-bit)**. Dự án không dùng npm.
+**Prerequisites:** Windows 10/11, Linux, or macOS; **Python 3.10 / 3.11 (64-bit)**. Node.js / npm is not required.
 
 ```bash
-# 1) Tạo và kích hoạt môi trường ảo
+# 1) Clone repository and create a virtual environment
 python -m venv venv
 .\venv\Scripts\activate        # Windows
 source venv/bin/activate       # Linux/macOS
 
-# 2) Cài dependencies
+# 2) Install dependencies
 pip install -r requirements.txt
 
-# 3) Khởi chạy
+# 3) Run the uploader
 python main.py
 ```
 
-### Cấu hình `config.json` (bắt buộc)
+### Configuration: `config.json` (Required)
 
 ```json
 {
@@ -129,91 +129,104 @@ python main.py
 }
 ```
 
-| Khóa | Ý nghĩa |
+| Key | Description |
 | --- | --- |
-| `groups` | Group ID → danh sách cookie `.ROBLOSECURITY` của uploader |
-| `upload_amount` | Số sản phẩm cần upload trong phiên chạy |
-| `assets_price` | Giá bán trên Marketplace (tối thiểu 5 Robux) |
-| `searching_tags` | Từ khóa quét catalog |
-| `sleep_each_upload` | Nghỉ giữa các lần upload (giây) |
-| `max_nudity_value` | Ngưỡng NSFW tối đa (khuyến nghị 0.25–0.35) |
-| `require_one_tag_in_name` | Bắt buộc tên chứa ít nhất một tag tìm kiếm |
-| `delete_all_images_on_restart` | Xóa toàn bộ ảnh cũ khi khởi động |
+| `groups` | Target Group ID mapped to an array of uploader `.ROBLOSECURITY` cookies |
+| `upload_amount` | Target number of clothing items to publish during this run |
+| `assets_price` | Marketplace sale price in Robux (minimum 5 Robux) |
+| `searching_tags` | Keywords used to query and scrape the Roblox catalog |
+| `sleep_each_upload` | Cooldown period between consecutive upload attempts (seconds) |
+| `max_nudity_value` | Maximum acceptable NSFW classification score (recommended 0.25–0.35) |
+| `require_one_tag_in_name` | Requires at least one search tag to appear in the candidate item name |
+| `delete_all_images_on_restart` | Clears all downloaded template images in `src/assets/` on startup |
 
-### Cấu hình `ai_settings.json` (tùy chọn — bật AI Enhance)
+### AI Configuration: `ai_settings.json` (Optional)
 
 ```json
 {
-    "enhance_clothes": true,
+    "enhance_clothes": false,
     "enhance_provider": "gemini_cookie",
     "gemini_cookie": "YOUR_GEMINI_BROWSER_COOKIE"
 }
 ```
 
-`enhance_provider` nhận: `local` (mặc định), `gemini_cookie`, `gemini` (API key), `replicate_sd`, `openai`, `photoroom`.
+Supported `enhance_provider` values:
+- `local` — Fast offline procedural enhancement (AO shading + UV seams). Default fallback.
+- `gemini_cookie` — High-quality texture redesign using Gemini Web cookies (no API quota needed).
+- `gemini` — Official Google Gemini API with multi-key rotation (`gemini_api_keys`).
+- `replicate_sd` — Stable Diffusion image-to-image or ControlNet via Replicate API.
+- `openai` — DALL-E / OpenAI image edit API.
+- `photoroom` — PhotoRoom API for background cleaning and beautification.
 
 ---
 
-## Cấu trúc thư mục & Workflow
+## Architecture & Workflow
 
 ```text
 xool-main/
-├── main.py                 # Vòng lặp điều phối: pick → process → upload → publish
-├── config.json             # Cấu hình chính (group, cookie, tag, filter, giá)
-├── ai_settings.json        # Cấu hình enhance (Gemini / Replicate)
+├── main.py                 # Pipeline orchestrator: pick → process → upload → release
+├── config.json             # Core configuration (groups, cookies, tags, filters, pricing)
+├── ai_settings.json        # Enhancement settings (Gemini, Replicate, local engine)
 ├── requirements.txt        # requests, Pillow, tensorflow, opennsfw2, imagehash...
-├── assets/                 # Media (demo.gif)
+├── LICENSE                 # MIT License
 └── src/
-    ├── cookie/             # .ROBLOSECURITY, CSRF refresh, 429 backoff
-    ├── download/           # Tải asset gốc + kiểm tra NSFW
-    ├── enhance/            # Gemini Web/API, Replicate, UV seam, AO shading
-    ├── files/              # ImageHash chống trùng lặp, dọn file
-    ├── naming.py           # Dịch tên VI→EN, lọc ký tự non-Latin
-    ├── scrape/             # Catalog cursor pagination + blacklist
-    ├── ui/                 # Console UI ANSI đa luồng
-    └── upload/             # Tạo asset, chờ moderation, publish, pending queue
+    ├── cookie/             # .ROBLOSECURITY parser, CSRF refresher, 429 rate limiter
+    ├── download/           # Catalog asset downloader + neural NSFW filtering
+    ├── enhance/            # Gemini Web/API, Replicate SD, UV seam alignment, AO shading
+    ├── files/              # ImageHash deduplication and file lifecycle management
+    ├── naming.py           # VI→EN catalog translator and ASCII/SEO sanitizer
+    ├── scrape/             # Catalog cursor pagination and blacklist filter
+    ├── ui/                 # Multi-threaded ANSI Console UI
+    ├── upload/             # Asset creation, moderation polling, publishing, pending queue
+    └── assets/
+        ├── overlays/       # Pre-baked fashion overlays (folds, shines, aesthetics)
+        ├── pants/          # Local pants texture repository
+        ├── shading/        # Procedural AO templates (shirt & pants)
+        ├── shirts/         # Local shirts texture repository
+        ├── template/       # Official 585x559 Roblox clothing UV template
+        └── pending_sales.json  # Persistent queue for assets awaiting release retry
 ```
 
-**Luồng chạy — Input → Xử lý → Output:**
+**End-to-End Execution Flow:**
 
 ```text
 [INPUT]   Cookie + Group ID + searching_tags + assets_price (config.json)
    ↓
-[XỬ LÝ]   Scrape catalog (150 item) → dịch tên EN → lọc blacklist
-          → dedupe ImageHash → NSFW check → enhance (AI/local)
+[PROCESS] Scrape catalog (150 items) → translate title to English → blacklist filter
+          → perceptual hash deduplication → NSFW neural check → texture enhance (AI/local)
    ↓
-[OUTPUT]  Upload asset (phí cọc 80 R$) → chờ moderation → publish lên Group
-          → thanh toán thành công: hiển thị trên UI
-          → lỗi tạm thời: lưu pending_sales.json, tự thử lại sau
+[OUTPUT]  Upload asset (80 R$ fee) → poll moderation status → publish to Group store
+          → success: metrics updated on ANSI terminal UI
+          → transient error: saved to pending_sales.json for automated retry
 ```
 
 ---
 
-## Xử lý lỗi thường gặp (Troubleshooting / FAQ)
+## Troubleshooting & FAQ
 
-**1. `ModuleNotFoundError` / `ImportError: DLL load failed` (thiếu thư viện)**
-Cài đủ gói bằng `pip install -r requirements.txt`. Trên Windows, TensorFlow cần **Visual C++ Redistributable (x64)** — tải từ Microsoft rồi khởi động lại máy. Dùng Python 3.10/3.11 64-bit.
+**1. `ModuleNotFoundError` / `ImportError: DLL load failed`**
+Ensure dependencies are installed via `pip install -r requirements.txt`. On Windows, TensorFlow requires the **Visual C++ Redistributable (x64)** installed from Microsoft. Ensure you are executing with 64-bit Python 3.10 or 3.11.
 
-**2. `InvalidURL: Missing scheme` hoặc `ProxyError` (sai format proxy)**
-Proxy phải có scheme và đúng cấu trúc `scheme://user:pass@host:port`:
+**2. `InvalidURL: Missing scheme` or `ProxyError`**
+Ensure your proxy configuration includes the protocol scheme:
 ```powershell
 $env:HTTP_PROXY="http://user:pass@ip:port"
 $env:HTTPS_PROXY="http://user:pass@ip:port"
-# SOCKS: pip install "requests[socks]" rồi dùng socks5://user:pass@ip:port
+# SOCKS5: pip install "requests[socks]" then use socks5://user:pass@ip:port
 ```
 
-**3. `cookie is invalid (HTTP 401/403)` (token hết hạn)**
-Cookie đã hết hạn hoặc bị thu hồi. Đăng nhập lại Roblox trong trình duyệt ẩn danh, F12 → Application → Cookies → copy `.ROBLOSECURITY` mới vào `config.json`. Nếu chỉ lỗi CSRF, tool tự refresh token và thử lại.
+**3. `cookie is invalid (HTTP 401/403)`**
+The `.ROBLOSECURITY` cookie has expired or been invalidated by a logout/IP change. Obtain a fresh cookie from an incognito session via Developer Tools (F12 → Application → Cookies → `.ROBLOSECURITY`) and update `config.json`. If this is only a CSRF mismatch, the tool refreshes the token automatically.
 
 **4. `[cookie] rate limited; retrying in XXs` (HTTP 429)**
-Tool tự chờ theo `Retry-After` (tối đa 60s). Nếu lặp lại nhiều, tăng `sleep_each_upload` lên 10–15 giây hoặc đổi IP/proxy.
+Roblox API has rate limited your IP. The tool honors the `Retry-After` header automatically (capped at 60s). To reduce frequency, increase `sleep_each_upload` to 10–15 seconds or route requests through clean residential proxies.
 
 > [!NOTE]
-> Lỗi `80 Robux is needed`: Roblox yêu cầu phí cọc publishing cho Classic Clothing. Nạp đủ Robux vào Group hoặc tài khoản uploader trước khi chạy.
+> `80 Robux is needed`: Roblox requires an 80 Robux deposit per Classic Clothing creation. Ensure the uploader account or group fund possesses sufficient Robux before initiating uploads.
 
 ---
 
-## Kết nối & Hỗ trợ (Connect & Support)
+## Connect & Support
 
 - **Discord**: [https://discord.gg/rxw8Hwk3qA](https://discord.gg/rxw8Hwk3qA)
 - **TikTok**: [@lakofusion](https://www.tiktok.com/@lakofusion)
