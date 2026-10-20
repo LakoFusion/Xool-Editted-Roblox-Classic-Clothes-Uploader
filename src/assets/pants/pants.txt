@@ -1,0 +1,2 @@
+# Placeholder to preserve empty directory in Git.
+# Downloaded templates are saved here.
