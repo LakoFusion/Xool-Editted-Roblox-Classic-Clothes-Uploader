@@ -1,0 +1,7 @@
+{
+    "enhance_clothes": true,
+    "enhance_provider": "gemini_cookie",
+    "gemini_api_keys": [],
+    "gemini_cookie": "",
+    "replicate_api_token": ""
+}

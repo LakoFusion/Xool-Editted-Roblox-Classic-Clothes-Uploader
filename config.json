@@ -1,0 +1,30 @@
+{
+    "groups": {
+        "34213725": {
+            "uploader_cookies": [
+                ""
+            ]
+        }
+    },
+    "upload_amount": 1,
+    "assets_price": 5,
+    "delete_all_images_on_restart": false,
+    "searching_tags": "y2k emo goth grunge",
+    "require_one_tag_in_name": true,
+    "sleep_each_upload": 5,
+    "max_nudity_value": 0.3,
+    "blacklisted_words": [
+        "nike",
+        "adidas",
+        "gucci",
+        "off white",
+        "supreme",
+        "marshmello",
+        "alan walker",
+        "ksi",
+        "paul",
+        "hot",
+        "bikini"
+    ],
+    "description": "★ High quality Y2K aesthetic fit crafted for the streets.\n♰ Join our group for daily drops & exclusive catalog ranks!\n⋆ Check out matching pieces in our group store.\n\ntags: y2k, cyber, goth, grunge, emo, vamp, opium, streetwear, aesthetic, vintage, archive, drain, dark, alternative, indie, chic, retro"
+}
