@@ -1,5 +1,5 @@
 {
-    "enhance_clothes": true,
+    "enhance_clothes": false,
     "enhance_provider": "gemini_cookie",
     "gemini_api_keys": [],
     "gemini_cookie": "",
